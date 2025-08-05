@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import z from "zod";
 
 const formSchema= z.object({
@@ -23,6 +26,8 @@ const formSchema= z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const SignUpForm = () => {
+const router = useRouter();
+
 const form = useForm<FormValues>({
   resolver: zodResolver(formSchema),
   defaultValues: {
@@ -33,8 +38,22 @@ const form = useForm<FormValues>({
   },
 });
 
-  function onSubmit(values: FormValues) {
-    console.log(values);
+  async function onSubmit(values: FormValues) {
+      await authClient.signUp.email({
+        name: values.name,
+        email: values.email,
+        password: values.password,
+        fetchOptions: {
+          onSuccess: () => {
+            router.push("/");
+          },
+          onError: (error) => {
+            if (error.error.code === "USER_ALREADY_EXISTS") {
+              toast.error("Usuário já existe.");
+            }
+          },
+        },
+      });
   }
   return (
     <>
